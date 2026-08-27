@@ -95,7 +95,13 @@ function Get-MediaItems {
             if ($Relative) { $childRelative = Join-Path $Relative $item.Name }
             else           { $childRelative = $item.Name }
 
+            # Reading a folder off a phone takes a moment, so say which one we are on
+            # rather than sitting silent until every folder has been read.
+            if ($Top) { Write-Host ("  {0,-12} " -f $item.Name) -NoNewline }
+
             $fromChild = @(Get-MediaItems -Folder $item.GetFolder -Relative $childRelative -Top $false)
+
+            if ($Top) { Write-Host "$($fromChild.Count) file(s)" }
 
             # A folder that matched the pattern but holds nothing is worth calling out:
             # on a phone using iCloud those photos live in the cloud, not on the device.
