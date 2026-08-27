@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copy iPhone media files (.MOV, .JPG, .HEIC by default) from a source folder
+# Copy iPhone media files (.MOV, .JPG, .HEIC, .PNG, .MP4 by default) from a source folder
 # to a destination folder.
 #
 # NOTE: this only works when the source is a real filesystem path - a mounted
@@ -9,19 +9,19 @@
 # has no filesystem path; use Copy-IPhoneMedia.ps1 for that.
 #
 # Usage:
-#   ./copy-iphone-media.sh SOURCE DESTINATION [options]
+#   ./copy_iphone_media.sh SOURCE DESTINATION [options]
 #
-#   -e "mov jpg heic"   extensions to copy (default: mov jpg heic)
+#   -e "mov jpg heic"   extensions to copy (default: mov jpg heic png mp4)
 #   -f "2024*"          which sub-folders to enter (default: all)
 #   -F                  flat: no sub-folders in the destination
 #   -n                  dry run
 #
 # Example:
-#   ./copy-iphone-media.sh /mnt/e/DCIM ~/Photos/iphone -f "2024*"
+#   ./copy_iphone_media.sh /mnt/e/DCIM ~/Photos/iphone -f "2024*"
 
 set -euo pipefail
 
-extensions="mov jpg heic"
+extensions="mov jpg heic png mp4"
 folders="*"
 flat=false
 dry_run=false

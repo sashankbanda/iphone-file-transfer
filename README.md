@@ -6,7 +6,7 @@ No iTunes sync, no cloud upload, no third-party transfer tool. Files are copied 
 
 ## Features
 
-- Copies `.MOV`, `.JPG` and `.HEIC` (any extensions you like)
+- Copies `.MOV`, `.JPG`, `.HEIC`, `.PNG` and `.MP4` — photos, videos and screenshots (any extensions you like)
 - Pick which month folders to pull with a wildcard, e.g. `2026*`
 - Keeps the phone's folder structure, or flattens it
 - **Resumable** — already-copied files are skipped, so an interrupted transfer picks up where it stopped
@@ -31,7 +31,7 @@ This is Apple's official Windows app, and it is the only prerequisite you actual
 Windows 10 or 11 with PowerShell, which is preinstalled. Nothing else to set up.
 
 > [!IMPORTANT]
-> A connected iPhone is an MTP device: it has no drive letter and exists only inside Windows Explorer's namespace. WSL never sees the USB device, so `cp`, `rsync` and `find` have nothing to open. The included `copy-iphone-media.sh` is a bash equivalent, but it only works on ordinary folders (a mounted drive, an SD card, an already-imported folder) — never on the phone itself.
+> A connected iPhone is an MTP device: it has no drive letter and exists only inside Windows Explorer's namespace. WSL never sees the USB device, so `cp`, `rsync` and `find` have nothing to open. The included `copy_iphone_media.sh` is a bash equivalent, but it only works on ordinary folders (a mounted drive, an SD card, an already-imported folder) — never on the phone itself.
 
 ### 3. The phone, unlocked and trusted
 
@@ -58,7 +58,38 @@ This PC\Apple iPhone\Internal Storage\202607_a
 
 Folders are named by year and month, so `202607_a` is July 2026. Pass either a single month folder or `Internal Storage` itself with a `-Folders` filter.
 
-## Usage
+## Quick start — no command line
+
+**Double-click `run.cmd`.** It finds your iPhone, shows what is on it, and asks where to put the files. Nothing to type but answers.
+
+```text
+--- Copy media off an iPhone ---
+
+Found device: Apple iPhone
+
+Folders found (43) - a phone names them by year and month:
+  201709_a   201711_a   202007_a   202303_a   202308_a
+  202309_a   202311_a   202312_a   202401_a   202402_a
+  ...
+
+Which folders (* for all, or a pattern like 2026*) [*]: 2026*
+Copy them to [C:\Users\you\Pictures\iPhone]:
+File types to copy [.MOV,.JPG,.HEIC,.PNG,.MP4]:
+
+  from   This PC\Apple iPhone\Internal Storage   (folders: 2026*)
+  to     C:\Users\you\Pictures\iPhone
+  types  .MOV, .JPG, .HEIC, .PNG, .MP4
+
+Start copying? (y/n) [y]:
+```
+
+Press Enter to accept any suggestion in brackets. Answer `n` at the end and nothing is written.
+
+If the phone is not found, the script lists what it can see and lets you look again with `r` once you have unlocked the phone and tapped Trust — no need to start over.
+
+## Usage from the command line
+
+Everything can also be passed as arguments, which skips all the questions — useful for repeat or scheduled runs.
 
 Open a normal PowerShell window (no administrator rights needed) and `cd` to the folder holding the script.
 
@@ -97,7 +128,7 @@ Copied 1158 file(s) (11.6 GB), skipped 457, failed 0
 
 | Option | Description | Default |
 | --- | --- | --- |
-| `-Extensions` | File types to copy | `.MOV, .JPG, .HEIC` |
+| `-Extensions` | File types to copy | `.MOV, .JPG, .HEIC, .PNG, .MP4` |
 | `-Folders` | Wildcard for which sub-folders to enter | `*` (all) |
 | `-Flat` | Put every file directly in the destination, no sub-folders | off |
 | `-Overwrite` | Replace a same-named file instead of keeping both | off |
@@ -110,6 +141,10 @@ Copied 1158 file(s) (11.6 GB), skipped 457, failed 0
 If a folder stays empty across several runs, those photos genuinely are not on the device. That is iCloud's **Optimize iPhone Storage** keeping originals in the cloud. Switch to *Settings → Photos → Download and Keep Originals* and let the phone sync before copying.
 
 **Two files per edited photo.** `IMG_1234.JPG` is the untouched original and `IMG_E1234.JPG` is your edited version. Both get copied, so you keep the original — which is why the file count is higher than the number of photos in your camera roll.
+
+**Screenshots are PNG.** iPhone screenshots are saved as `.PNG`, not `.JPG`, and some clips save as `.MP4` rather than `.MOV` — both are included by default so nothing is quietly left behind.
+
+**`.AAE` files are skipped on purpose.** These sit next to edited photos and contain only the edit instructions (crop, filter, adjustments). They are useless outside Apple's Photos app, and the edited image itself already comes across as `IMG_E1234.JPG`, so there is nothing to lose by ignoring them.
 
 **Quality is never reduced.** The script performs a binary copy and has no decoder in the path. If you want to be certain your HEIC files stay HEIC, check *Settings → Photos → Transfer to Mac or PC* is set to **Keep Originals**; on *Automatic* the phone itself converts to JPEG during transfer, before the script ever sees the file.
 
