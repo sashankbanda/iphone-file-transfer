@@ -21,13 +21,6 @@ read. You do not need to open or sign into the app — installing it is enough.
 
 **3. The phone unlocked and trusted.** Plug it in, unlock the screen, and tap
 **Trust This Computer** on the prompt. A locked phone lists as empty.
-
-> **Must run on Windows.** The iPhone connects as an MTP device with no drive
-> letter, so it only exists inside Windows Explorer's namespace. WSL cannot see
-> the USB device at all, and `cp` / `robocopy` / `Get-ChildItem` cannot open the
-> path. `copy-iphone-media.sh` is the bash equivalent, but it only works on
-> ordinary folders (a mounted drive, an SD card) — not on the phone.
-
 ---
 
 ## Checking the path
