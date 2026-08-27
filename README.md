@@ -86,6 +86,10 @@ powershell -ExecutionPolicy Bypass -File Copy-IPhoneMedia.ps1 "This PC\Apple iPh
 powershell -ExecutionPolicy Bypass -File Copy-IPhoneMedia.ps1 "This PC\Apple iPhone\Internal Storage" "D:\Videos" -Extensions .MOV -Flat
 ```
 
+**Example output:**
+```
+Copied 1158 file(s) (11.6 GB), skipped 457, failed 0
+```
 > [!NOTE]
 > **Why `-ExecutionPolicy Bypass`?** Windows refuses to run unsigned `.ps1` files by default. This flag lifts that for the single command you are running and changes nothing system-wide.
 
