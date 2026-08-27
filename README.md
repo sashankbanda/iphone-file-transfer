@@ -1,105 +1,122 @@
-# Copy iPhone Media
+# iPhone Media Transfer
 
-Copies `.MOV`, `.JPG` and `.HEIC` files off a cabled iPhone into a folder on the PC.
+A PowerShell script that copies photos and videos off a cabled iPhone into a folder on your PC.
 
-Files are copied byte-for-byte — nothing is re-encoded, and the original capture
-timestamps are kept.
+No iTunes sync, no cloud upload, no third-party transfer tool. Files are copied byte-for-byte — nothing is re-encoded, and original capture dates are preserved.
 
----
+## Features
 
-## Prerequisites
+- Copies `.MOV`, `.JPG` and `.HEIC` (any extensions you like)
+- Pick which month folders to pull with a wildcard, e.g. `2026*`
+- Keeps the phone's folder structure, or flattens it
+- **Resumable** — already-copied files are skipped, so an interrupted transfer picks up where it stopped
+- Never silently overwrites: a same-named but different file is saved alongside as `IMG_1234_1.JPG`
+- `-DryRun` shows exactly what would be copied before anything is written
+- Around 25 MB/s over USB (roughly 900 MB per minute)
 
-**1. Apple drivers.** Install the **Apple Devices** app from the Microsoft Store:
+## Requirements
 
-<https://apps.microsoft.com/detail/9np83lwlpz9k?hl=en-US&gl=BG>
+### 1. Apple drivers — install this first
 
-This is what makes the phone show up under `This PC` as a device. Without it
-Windows sees the iPhone as a charging-only cable and the script has nothing to
-read. You do not need to open or sign into the app — installing it is enough.
+**➡️ [Apple Devices (Microsoft Store)](https://apps.microsoft.com/detail/9np83lwlpz9k?hl=en-US&gl=BG)**
 
-**2. Windows PowerShell.** Already on every Windows machine, nothing to install.
+This is Apple's official Windows app, and it is the only prerequisite you actually have to install.
 
-**3. The phone unlocked and trusted.** Plug it in, unlock the screen, and tap
-**Trust This Computer** on the prompt. A locked phone lists as empty.
----
+**Why you need it:** Windows cannot talk to an iPhone on its own. Plug a phone into a fresh Windows install and you get a charging cable and nothing else — no drive, no folders, nothing in File Explorer. Installing Apple Devices adds the *Apple Mobile Device Support* drivers, which is what makes your iPhone appear under **This PC** with its photo folders visible. The script reads those folders, so without the drivers it has nothing to work with.
 
-## Checking the path
+**You do not have to open the app, create an Apple account, or sign into anything.** Installing it is enough — the drivers register themselves. If you already have iTunes or Apple Devices installed, you are ready to go.
 
-Open Explorer and find your phone. The path looks like:
+### 2. Windows
+
+Windows 10 or 11 with PowerShell, which is preinstalled. Nothing else to set up.
+
+> [!IMPORTANT]
+> A connected iPhone is an MTP device: it has no drive letter and exists only inside Windows Explorer's namespace. WSL never sees the USB device, so `cp`, `rsync` and `find` have nothing to open. The included `copy-iphone-media.sh` is a bash equivalent, but it only works on ordinary folders (a mounted drive, an SD card, an already-imported folder) — never on the phone itself.
+
+### 3. The phone, unlocked and trusted
+
+Connect the cable, unlock the screen, and tap **Trust This Computer** when the phone asks. A locked or untrusted phone shows up as empty.
+
+## Installation
+
+Clone the repo, or just download `Copy-IPhoneMedia.ps1` — it is a single self-contained file with no dependencies.
+
+```bash
+git clone https://github.com/kyuchukovv/iphone-media-transfer.git
+```
+
+> [!NOTE]
+> If you download the file directly, check the saved filename. Some browsers strip hyphens and save it as `CopyIPhoneMedia.ps1`. Use whatever name is actually on disk, or rename it back.
+
+## Finding your phone's path
+
+Open File Explorer and look under **This PC**. Your iPhone appears as a device, and the path looks like this:
 
 ```
 This PC\Apple iPhone\Internal Storage\202607_a
 ```
 
-The folders are named by year and month — `202607_a` is July 2026.
+Folders are named by year and month, so `202607_a` is July 2026. Pass either a single month folder or `Internal Storage` itself with a `-Folders` filter.
 
----
+## Usage
 
-## Running it
+Open a normal PowerShell window (no administrator rights needed) and `cd` to the folder holding the script.
 
-From a normal PowerShell window (no admin needed), in the folder holding the script:
+**Copy one month:**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File Copy-IPhoneMedia.ps1 "This PC\Apple iPhone\Internal Storage\202607_a" "D:\Photos"
 ```
 
-`-ExecutionPolicy Bypass` is needed because Windows blocks unsigned `.ps1` files
-by default. It applies only to that one run and changes nothing system-wide.
-
-Everything from 2026, keeping the folder structure:
+**Copy everything from 2026, keeping the month folders:**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File Copy-IPhoneMedia.ps1 "This PC\Apple iPhone\Internal Storage" "D:\Photos" -Folders "2026*"
 ```
 
-See what would happen without copying anything:
+**Preview first, copy nothing:**
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File Copy-IPhoneMedia.ps1 "This PC\Apple iPhone\Internal Storage" "D:\Photos" -Folders "2026*" -DryRun
 ```
 
----
+**Videos only, all into one folder:**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Copy-IPhoneMedia.ps1 "This PC\Apple iPhone\Internal Storage" "D:\Videos" -Extensions .MOV -Flat
+```
+
+> [!NOTE]
+> **Why `-ExecutionPolicy Bypass`?** Windows refuses to run unsigned `.ps1` files by default. This flag lifts that for the single command you are running and changes nothing system-wide.
 
 ## Options
 
-| Option | Meaning |
-| --- | --- |
-| `-Extensions .MOV,.JPG,.HEIC` | Which file types to copy. Default is those three. |
-| `-Folders "2026*"` | Which sub-folders to enter. Default is all of them. |
-| `-Flat` | Put every file straight into the destination, no sub-folders. |
-| `-Overwrite` | Replace a same-named file instead of keeping both. |
-| `-DryRun` | List what would be copied, copy nothing. |
+| Option | Description | Default |
+| --- | --- | --- |
+| `-Extensions` | File types to copy | `.MOV, .JPG, .HEIC` |
+| `-Folders` | Wildcard for which sub-folders to enter | `*` (all) |
+| `-Flat` | Put every file directly in the destination, no sub-folders | off |
+| `-Overwrite` | Replace a same-named file instead of keeping both | off |
+| `-DryRun` | List what would be copied without copying | off |
 
----
+## Things worth knowing
 
-## Good to know
+**A folder that reports no files usually just needs another run.** The phone often lists a month folder as empty on first access and fills it in on a later read. This is a quirk of how iPhones expose storage over USB, not a failure. Run the script again — copied files are skipped, so a re-run only costs the ones that were missed.
 
-**Re-running is safe and cheap.** Files already copied are skipped, so an
-interrupted transfer resumes where it left off. A same-named file with different
-content is saved as `IMG_1234_1.JPG` rather than overwriting — repeated runs will
-not pile up duplicates.
+If a folder stays empty across several runs, those photos genuinely are not on the device. That is iCloud's **Optimize iPhone Storage** keeping originals in the cloud. Switch to *Settings → Photos → Download and Keep Originals* and let the phone sync before copying.
 
-**If a folder reports no files, run it again.** The phone often lists a folder as
-empty on first access and fills it in on a later read. This is normal and not an
-error. Only if a folder stays empty across several runs are those photos actually
-off the device — that happens with iCloud's *Optimize iPhone Storage*, which
-leaves originals in the cloud. Switching to Settings → Photos → **Download and
-Keep Originals** and letting the phone sync brings them back locally.
+**Two files per edited photo.** `IMG_1234.JPG` is the untouched original and `IMG_E1234.JPG` is your edited version. Both get copied, so you keep the original — which is why the file count is higher than the number of photos in your camera roll.
 
-**Two files per edited photo.** `IMG_1234.JPG` is the original and
-`IMG_E1234.JPG` is your edited version. Both are copied, so you keep the
-untouched original too. That is why the file count runs higher than the number of
-photos in your camera roll.
-
-**Expect around 25 MB/s** over the cable — roughly 900 MB per minute.
-
----
+**Quality is never reduced.** The script performs a binary copy and has no decoder in the path. If you want to be certain your HEIC files stay HEIC, check *Settings → Photos → Transfer to Mac or PC* is set to **Keep Originals**; on *Automatic* the phone itself converts to JPEG during transfer, before the script ever sees the file.
 
 ## Troubleshooting
 
-| Problem | Cause |
+| Message or symptom | Cause and fix |
 | --- | --- |
-| `'Apple iPhone' not found under This PC` | Drivers missing (install Apple Devices), phone locked, or Trust not accepted. The script prints what it did find at that level. |
-| `The argument ... does not exist` | Wrong filename. Browsers sometimes strip the hyphens on download — check the actual name in the folder. |
-| Folder found but no files | See "run it again" above. |
-| Files arrive as `.JPG` when you expect `.HEIC` | Phone is set to convert on transfer. Settings → Photos → Transfer to Mac or PC → **Keep Originals**. |
+| `'Apple iPhone' not found under This PC` | Drivers not installed, phone locked, or Trust not accepted. The script prints the device names it did find so you can compare. |
+| `The argument ... does not exist` | Wrong filename — check whether your browser saved it as `CopyIPhoneMedia.ps1`. |
+| `... cannot be loaded because running scripts is disabled` | You left off `-ExecutionPolicy Bypass`. |
+| Folder is found but no files listed | Normal on a first read. Run it again — see above. |
+| Files arrive as `.JPG` when you expected `.HEIC` | Phone is converting on transfer. Set *Transfer to Mac or PC* to **Keep Originals**. |
+| Transfer is slow | Use a USB 3 port and Apple's own cable; cheap cables often negotiate USB 2 speeds. |
+
